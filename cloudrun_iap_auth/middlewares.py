@@ -4,7 +4,6 @@ from django.contrib.auth import login, get_user_model
 from django.http import HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
-from django.db.models import Q
 
 from google.auth.transport import requests
 from google.oauth2 import id_token
@@ -103,6 +102,6 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             )
 
         # Log the user in if they aren't already authenticated as this user.
-        if not request.user.is_authenticated or request.user != user:
+        if not request.user.is_authenticated:
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             logger.debug(f"IAP: User {email} logged in.")
