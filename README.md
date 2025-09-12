@@ -63,6 +63,10 @@ IAP_EXPECTED_AUDIENCE = '/projects/123456789123/locations/europe-west1/services/
 
 # (Optional) Restrict logins to a specific Google Workspace or Cloud Identity domain.
 IAP_EMAIL_DOMAIN = 'emencia.com'
+IAP_EXEMPT_URLS = [
+    "/api/healthcheck/",
+    "/status/"
+]
 ```
 
 ## Usage
