@@ -12,6 +12,9 @@ from google.oauth2 import id_token
 logger = logging.getLogger(__name__)
 
 
+SERVICE_ACCOUNT_REGEX = re.compile(r'^[^@]+@(.+\.)?gserviceaccount\.com$')
+
+
 class IAPAuthenticationMiddleware(MiddlewareMixin):
     """
     Middleware for authenticating users via Google Cloud IAP.
@@ -48,12 +51,14 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
                 )
                 return  # Skip IAP authentication for this path
 
+
         # IAP provides these headers after successful authentication
         iap_user_email_header = "X-Goog-Authenticated-User-Email"
         iap_jwt_assertion_header = "X-Goog-IAP-JWT-Assertion"
 
         iap_user_email = request.headers.get(iap_user_email_header)
         iap_jwt = request.headers.get(iap_jwt_assertion_header)
+
 
         # Ensure all necessary IAP headers are present
         if not all([iap_user_email, iap_jwt]):
@@ -87,6 +92,9 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             return HttpResponseForbidden("Email mismatch in IAP headers.")
 
         email = decoded_email
+
+        if SERVICE_ACCOUNT_REGEX.match(header_email):
+            return  # IAP use service account, not need match django user
 
         # Optional: Validate the email domain if specified in settings
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
