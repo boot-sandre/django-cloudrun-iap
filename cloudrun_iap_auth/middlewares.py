@@ -1,5 +1,6 @@
 # django_iap_auth/middleware.py
 import logging
+import re
 from django.contrib.auth import login, get_user_model
 from django.http import HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
