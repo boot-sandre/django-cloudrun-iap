@@ -88,7 +88,11 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
         # Optional: Validate the email domain if specified in settings
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
-        if iap_email_domain and not email.endswith(f"@{iap_email_domain}"):
+        # Cast correctly settings, endswith accept or a string, or a tuple.
+        if type(iap_email_domain) is list:
+            iap_email_domain = tuple(iap_email_domain)
+
+        if iap_email_domain and not email.endswith(iap_email_domain):
             logger.warning(f"IAP: Received email from unexpected domain: {email}")
             return HttpResponseForbidden(
                 f"Bad IAP user domain. Must be @{iap_email_domain} but received {email}"
