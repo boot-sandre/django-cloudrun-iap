@@ -40,18 +40,20 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         if not getattr(settings, "IAP_ENABLED", False):
+            logger.debug("IAP is desactivated. looks dj settings IAP_ENABLED")
             # IAP is not enabled, skip this middleware
             return
+        logger.debug("IAP is activated by IAP_ENABLED dj settings")
 
         # Check for public URL exceptions
         iap_exempt_urls = getattr(settings, "IAP_EXEMPT_URLS", [])
+        logger.debug(f"IAP_EXEMPT_URLS: {iap_exempt_urls}")
         for url_pattern in iap_exempt_urls:
             if request.path.startswith(url_pattern):
-                logger.debug(
+                logger.info(
                     f"IAP: Bypassing authentication for exempt URL: {request.path}"
                 )
                 return  # Skip IAP authentication for this path
-
 
         # IAP provides these headers after successful authentication
         iap_user_email_header = "X-Goog-Authenticated-User-Email"
@@ -59,7 +61,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
         iap_user_email = request.headers.get(iap_user_email_header)
         iap_jwt = request.headers.get(iap_jwt_assertion_header)
-
+        logger.debug(f"iap_user_email from HTTP HEADERS {iap_user_email}")
 
         # Ensure all necessary IAP headers are present
         if not all([iap_user_email, iap_jwt]):
@@ -70,6 +72,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
         # Get the expected audience from Django settings
         expected_audience = getattr(settings, "IAP_EXPECTED_AUDIENCE", None)
+        logger.debug(f"IAP_EXPECTED_AUDIENCE: {expected_audience}")
         if not expected_audience:
             logger.error(
                 "IAP: IAP_EXPECTED_AUDIENCE is not set in settings. Cannot validate JWT."
@@ -78,7 +81,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
         # Validate the IAP JWT
         _, decoded_email, error_str = self._validate_iap_jwt(iap_jwt, expected_audience)
-
+        logger.debug(f"decoded email from jwt: {decoded_email}")
         if error_str:
             logger.error(f"IAP: JWT validation failed: {error_str}")
             return HttpResponseForbidden("IAP JWT validation failed.")
@@ -95,16 +98,18 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
         email = decoded_email
 
         if SERVICE_ACCOUNT_REGEX.match(header_email):
+            logger.debug("The mail provided by IAP is a GCP service account 'gserviceaccount\.com'")
             return  # IAP use service account, not need match django user
 
         # Optional: Validate the email domain if specified in settings
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
+        logger.debug(f"IAP email domain from django settings (tuple, list or None): {iap_email_domain}")
         # Cast correctly settings, endswith accept or a string, or a tuple.
         if type(iap_email_domain) is list:
             iap_email_domain = tuple(iap_email_domain)
 
         if iap_email_domain and not email.endswith(iap_email_domain):
-            logger.warning(f"IAP: Received email from unexpected domain: {email}")
+            logger.error(f"IAP: Received email from unexpected domain: {email}")
             return HttpResponseForbidden(
                 f"Bad IAP user domain. Must be @{iap_email_domain} but received {email}"
             )
@@ -123,7 +128,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
                 "Internal server error during IAP authentication."
             )
 
-        # Log the user in if they aren't already authenticated as this user.
+        # Log the user in if they are not already authenticated as this user.
         if not request.user.is_authenticated:
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-            logger.debug(f"IAP: User {email} logged in.")
+            logger.debug(f"IAP: User {email} with id {user.id} logged in.")
