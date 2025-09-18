@@ -99,7 +99,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
         if SERVICE_ACCOUNT_REGEX.match(header_email):
             logger.debug(
-                "The mail provided by IAP is a GCP service account 'gserviceaccount\.com'"
+                "The mail provided by IAP is a GCP service account 'gserviceaccount.com'"
             )
             return  # IAP use service account, not need match django user
 
