@@ -43,12 +43,23 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             # IAP is not enabled, skip this middleware
             return
 
+        # Check for public URL exceptions
+        iap_exempt_urls = getattr(settings, "IAP_EXEMPT_URLS", [])
+        for url_pattern in iap_exempt_urls:
+            if request.path.startswith(url_pattern):
+                logger.debug(
+                    f"IAP: Bypassing authentication for exempt URL: {request.path}"
+                )
+                return  # Skip IAP authentication for this path
+
+
         # IAP provides these headers after successful authentication
         iap_user_email_header = "X-Goog-Authenticated-User-Email"
         iap_jwt_assertion_header = "X-Goog-IAP-JWT-Assertion"
 
         iap_user_email = request.headers.get(iap_user_email_header)
         iap_jwt = request.headers.get(iap_jwt_assertion_header)
+
 
         # Ensure all necessary IAP headers are present
         if not all([iap_user_email, iap_jwt]):

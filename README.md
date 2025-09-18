@@ -65,6 +65,10 @@ IAP_EXPECTED_AUDIENCE = '/projects/123456789123/locations/europe-west1/services/
 # Can use a string, a list of domain, or a tuple
 IAP_EMAIL_DOMAIN = ["emencia.com", "velops.eu"]
 
+IAP_EXEMPT_URLS = [
+    "/api/healthcheck/",
+    "/status/"
+]
 ```
 
 ## Usage
