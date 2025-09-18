@@ -13,7 +13,7 @@ from google.oauth2 import id_token
 logger = logging.getLogger(__name__)
 
 
-SERVICE_ACCOUNT_REGEX = re.compile(r'^[^@]+@(.+\.)?gserviceaccount\.com$')
+SERVICE_ACCOUNT_REGEX = re.compile(r"^[^@]+@(.+\.)?gserviceaccount\.com$")
 
 
 class IAPAuthenticationMiddleware(MiddlewareMixin):
@@ -98,12 +98,16 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
         email = decoded_email
 
         if SERVICE_ACCOUNT_REGEX.match(header_email):
-            logger.debug("The mail provided by IAP is a GCP service account 'gserviceaccount\.com'")
+            logger.debug(
+                "The mail provided by IAP is a GCP service account 'gserviceaccount\.com'"
+            )
             return  # IAP use service account, not need match django user
 
         # Optional: Validate the email domain if specified in settings
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
-        logger.debug(f"IAP email domain from django settings (tuple, list or None): {iap_email_domain}")
+        logger.debug(
+            f"IAP email domain from django settings (tuple, list or None): {iap_email_domain}"
+        )
         # Cast correctly settings, endswith accept or a string, or a tuple.
         if type(iap_email_domain) is list:
             iap_email_domain = tuple(iap_email_domain)
