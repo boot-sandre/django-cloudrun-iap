@@ -131,8 +131,5 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             return HttpResponseForbidden(
                 "Internal server error during IAP authentication."
             )
-
-        # Log the user in if they are not already authenticated as this user.
-        if not request.user.is_authenticated:
-            login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-            logger.debug(f"IAP: User {email} with id {user.id} logged in.")
+        request.user = user
+        logger.debug(f"IAP: user {email} with id {user.id} set on request.")
