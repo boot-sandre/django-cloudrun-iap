@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-cloudrun-iap"
-version = "0.2.6"
+version = "0.2.6-alpha"
 authors = [
     { name = "Simon ANDRE", email = "simon.andre@emencia.com" },
 ]
