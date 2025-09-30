@@ -18,18 +18,12 @@ class IAPServiceUser:
     is_authenticated = True
     is_staff = False
     is_superuser = False
-    id = None
 
     def __init__(self, email):
         self.email = email
 
     def get_full_name(self):
         return f"Service Account: {self.email}"
-
-    @property
-    def pk(self):
-        # Allow code that checks for primary key to work safely
-        return self.id
 
 
 SERVICE_ACCOUNT_REGEX = re.compile(r"^[^@]+@(.+\.)?gserviceaccount\.com$")
