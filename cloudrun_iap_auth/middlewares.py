@@ -18,6 +18,7 @@ class IAPServiceUser:
     is_authenticated = True
     is_staff = False
     is_superuser = False
+    is_anonymous = False
 
     def __init__(self, email):
         self.email = email
