@@ -1,6 +1,7 @@
 import logging
 import re
-from django.contrib.auth import AbstractUser, get_user_model
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from django.http import HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
