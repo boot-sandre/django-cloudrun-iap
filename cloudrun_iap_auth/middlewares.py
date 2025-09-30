@@ -1,7 +1,6 @@
-# django_iap_auth/middleware.py
 import logging
 import re
-from django.contrib.auth import login, get_user_model
+from django.contrib.auth import AbstractUser, get_user_model
 from django.http import HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
@@ -13,11 +12,11 @@ from google.oauth2 import id_token
 logger = logging.getLogger(__name__)
 
 
-class IAPServiceUser:
+class IAPServiceUser(AbstractUser):
     """A minimal mock user object for authenticated IAP service accounts."""
     is_authenticated = True
-    is_staff = False
-    is_superuser = False
+    is_staff = True
+    is_superuser = True
     is_anonymous = False
 
     def __init__(self, email):
