@@ -13,6 +13,25 @@ from google.oauth2 import id_token
 logger = logging.getLogger(__name__)
 
 
+class IAPServiceUser:
+    """A minimal mock user object for authenticated IAP service accounts."""
+    is_authenticated = True
+    is_staff = False
+    is_superuser = False
+    id = None
+
+    def __init__(self, email):
+        self.email = email
+
+    def get_full_name(self):
+        return f"Service Account: {self.email}"
+
+    @property
+    def pk(self):
+        # Allow code that checks for primary key to work safely
+        return self.id
+
+
 SERVICE_ACCOUNT_REGEX = re.compile(r"^[^@]+@(.+\.)?gserviceaccount\.com$")
 
 
@@ -99,11 +118,13 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
         if SERVICE_ACCOUNT_REGEX.match(header_email):
             logger.debug(
-                "The mail provided by IAP is a GCP service account 'gserviceaccount.com'"
+                f"IAP: Authenticated a GCP service account: {email}. Creating in-memory user object."
             )
-            return  # IAP use service account, not need match django user
+            # Instantiate the mock user and set it on the request
+            request.user = IAPServiceUser(email=email)
+            logger.debug(f"IAP: Service account {email}.")
+            return
 
-        # Optional: Validate the email domain if specified in settings
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
         logger.debug(
             f"IAP email domain from django settings (tuple, list or None): {iap_email_domain}"
