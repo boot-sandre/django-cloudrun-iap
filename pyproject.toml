@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-cloudrun-iap"
-version = "0.2.8-2"
+version = "0.2.9"
 authors = [
     { name = "Simon ANDRE", email = "simon.andre@emencia.com" },
 ]
@@ -28,6 +28,13 @@ classifiers = [
 dependencies = [
     "django~=3.2",
     "google-auth>=2.0.0",
+    "requests",
+]
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-django>=4.5",
+    "pytest-mock>=3.0",
 ]
 
 [project.urls]

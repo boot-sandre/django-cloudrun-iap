@@ -1,7 +1,6 @@
 import logging
 import re
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractUser
 from django.http import HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
@@ -9,8 +8,9 @@ from django.conf import settings
 from google.auth.transport import requests
 from google.oauth2 import id_token
 
-logger = logging.getLogger(__name__)
+from .models import IAPServiceUser
 
+logger = logging.getLogger(__name__)
 
 
 # Match GCP service account user
@@ -19,21 +19,6 @@ SERVICE_ACCOUNT_REGEX = re.compile(r"^[^@]+@(.+\.)?gserviceaccount\.com$")
 # IAP provides these headers after successful authentication
 IAP_USER_EMAIL_HEADER = "X-Goog-Authenticated-User-Email"
 IAP_JWT_ASSERTION_HEADER = "X-Goog-IAP-JWT-Assertion"
-
-
-class IAPServiceUser(AbstractUser):
-    """A minimal mock user object for authenticated IAP service accounts."""
-
-    is_authenticated = True
-    is_staff = True
-    is_superuser = True
-    is_anonymous = False
-
-    def __init__(self, email):
-        self.email = email
-
-    def get_full_name(self):
-        return f"Service Account: {self.email}"
 
 
 class IAPAuthenticationMiddleware(MiddlewareMixin):
@@ -60,6 +45,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Check if IAP is enabled
+        breakpoint()
         if not getattr(settings, "IAP_ENABLED", False):
             logger.debug("IAP is desactivated. looks dj settings IAP_ENABLED")
             return
@@ -76,8 +62,8 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
                 return
 
         # Fetch IAP headers
-        iap_user_email = request.headers.get(IAP_USER_EMAIL_HEADER)
-        iap_jwt = request.headers.get(IAP_JWT_ASSERTION_HEADER)
+        iap_user_email = request.META.get(IAP_USER_EMAIL_HEADER)
+        iap_jwt = request.META.get(IAP_JWT_ASSERTION_HEADER)
         logger.debug(f"iap_user_email from HTTP HEADERS {iap_user_email}")
 
         # Ensure all necessary IAP headers are present
@@ -128,11 +114,9 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             )
 
         self.set_iap_django_user(request, email)
-        logger.debug(
-            f"IAP: user {request.user.email} set on django request."
-        )
+        logger.debug(f"IAP: user {request.user.email} set on django request.")
 
-    def set_iap_django_user(request, email):
+    def set_iap_django_user(self, request, email):
         user = self.iap_django_user(email)
         if hasattr(request, "user") and request.user:
             if request.user.email == user.email:
@@ -150,8 +134,7 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
         )
         request.user = user
 
-
-    def iap_django_user(email: str):
+    def iap_django_user(self, email: str):
         User = get_user_model()
         is_gcp_service_account = bool(SERVICE_ACCOUNT_REGEX.match(email))
         if is_gcp_service_account:
