@@ -9,12 +9,21 @@ from django.conf import settings
 from google.auth.transport import requests
 from google.oauth2 import id_token
 
-
 logger = logging.getLogger(__name__)
+
+
+
+# Match GCP service account user
+SERVICE_ACCOUNT_REGEX = re.compile(r"^[^@]+@(.+\.)?gserviceaccount\.com$")
+
+# IAP provides these headers after successful authentication
+IAP_USER_EMAIL_HEADER = "X-Goog-Authenticated-User-Email"
+IAP_JWT_ASSERTION_HEADER = "X-Goog-IAP-JWT-Assertion"
 
 
 class IAPServiceUser(AbstractUser):
     """A minimal mock user object for authenticated IAP service accounts."""
+
     is_authenticated = True
     is_staff = True
     is_superuser = True
@@ -25,9 +34,6 @@ class IAPServiceUser(AbstractUser):
 
     def get_full_name(self):
         return f"Service Account: {self.email}"
-
-
-SERVICE_ACCOUNT_REGEX = re.compile(r"^[^@]+@(.+\.)?gserviceaccount\.com$")
 
 
 class IAPAuthenticationMiddleware(MiddlewareMixin):
@@ -53,9 +59,9 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             return (None, None, f"**ERROR: JWT validation error {e}**")
 
     def process_request(self, request):
+        # Check if IAP is enabled
         if not getattr(settings, "IAP_ENABLED", False):
             logger.debug("IAP is desactivated. looks dj settings IAP_ENABLED")
-            # IAP is not enabled, skip this middleware
             return
         logger.debug("IAP is activated by IAP_ENABLED dj settings")
 
@@ -67,14 +73,11 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
                 logger.info(
                     f"IAP: Bypassing authentication for exempt URL: {request.path}"
                 )
-                return  # Skip IAP authentication for this path
+                return
 
-        # IAP provides these headers after successful authentication
-        iap_user_email_header = "X-Goog-Authenticated-User-Email"
-        iap_jwt_assertion_header = "X-Goog-IAP-JWT-Assertion"
-
-        iap_user_email = request.headers.get(iap_user_email_header)
-        iap_jwt = request.headers.get(iap_jwt_assertion_header)
+        # Fetch IAP headers
+        iap_user_email = request.headers.get(IAP_USER_EMAIL_HEADER)
+        iap_jwt = request.headers.get(IAP_JWT_ASSERTION_HEADER)
         logger.debug(f"iap_user_email from HTTP HEADERS {iap_user_email}")
 
         # Ensure all necessary IAP headers are present
@@ -99,7 +102,6 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
         if error_str:
             logger.error(f"IAP: JWT validation failed: {error_str}")
             return HttpResponseForbidden("IAP JWT validation failed.")
-
         # The IAP user email header is formatted as 'accounts.google.com:user@example.com'
         # The email from the JWT should also match.
         header_email = iap_user_email.split(":")[-1]
@@ -110,15 +112,6 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
             return HttpResponseForbidden("Email mismatch in IAP headers.")
 
         email = decoded_email
-
-        if SERVICE_ACCOUNT_REGEX.match(header_email):
-            logger.debug(
-                f"IAP: Authenticated a GCP service account: {email}. Creating in-memory user object."
-            )
-            # Instantiate the mock user and set it on the request
-            request.user = IAPServiceUser(email=email)
-            logger.debug(f"IAP: Service account {email}.")
-            return
 
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
         logger.debug(
@@ -134,18 +127,60 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
                 f"Bad IAP user domain. Must be @{iap_email_domain} but received {email}"
             )
 
+        self.set_iap_django_user(request, email)
+        logger.debug(
+            f"IAP: user {request.user.email} set on django request."
+        )
+
+    def set_iap_django_user(request, email):
+        user = self.iap_django_user(email)
+        if hasattr(request, "user") and request.user:
+            if request.user.email == user.email:
+                logger.info(
+                    "User identified by IAP settings is already set on request django object."
+                )
+                return
+            logger.warning(
+                f"User provide by IAP headers ({user.email}) is mismatching "
+                f"user setted on django request ({request.user.email})."
+                "We will override request.user property."
+            )
+        logger.info(
+            f"Set request.user to the user ({user.email}) object matching with IAP authentification headers."
+        )
+        request.user = user
+
+
+    def iap_django_user(email: str):
         User = get_user_model()
+        is_gcp_service_account = bool(SERVICE_ACCOUNT_REGEX.match(email))
+        if is_gcp_service_account:
+            logger.debug(
+                f"IAP: Authenticated a GCP service account: {email}. Creating in-memory user object."
+            )
+            logger.debug(f"IAP: GCP Service account {email}.")
+            # Use herited user model instead of default application user model
+            User = IAPServiceUser
+
+        # Fetch the user
+        user = None
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            logger.error(
-                f"IAP: User authenticated by IAP not found in Django DB with email: {email}"
-            )
-            return HttpResponseForbidden("User not found in application database.")
+            if is_gcp_service_account:
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=None,
+                )
+            else:
+                logger.error(
+                    f"IAP: User authenticated by IAP not found in Django DB with email: {email}"
+                )
+                return HttpResponseForbidden("User not found in application database.")
         except Exception as e:
             logger.error(f"IAP: Error retrieving user from DB: {e}")
             return HttpResponseForbidden(
                 "Internal server error during IAP authentication."
             )
-        request.user = user
-        logger.debug(f"IAP: user {email} with id {user.id} set on request.")
+        return user
