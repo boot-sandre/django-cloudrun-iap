@@ -42,5 +42,5 @@ test = [
 "Bug Tracker" = "https://github.com/boot-sandre/django-cloudrun-iap/issues"
 
 [tool.setuptools]
-packages = ["cloudrun_iap_auth"]
+packages = ["django_cloudrun_iap"]
 

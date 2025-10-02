@@ -1,8 +1,8 @@
 import pytest
 from django.test import RequestFactory
 from django.contrib.auth import get_user_model
-from cloudrun_iap_auth.backends import IAPAuthenticationBackend
-from cloudrun_iap_auth.user import IAPServiceUser
+from django_cloudrun_iap.backends import IAPAuthenticationBackend
+from django_cloudrun_iap.user import IAPServiceUser
 
 User = get_user_model()
 
@@ -31,7 +31,7 @@ def create_user(db):
 def mock_verify_token(mocker, email, audience):
     mock_decoded_jwt = {"sub": "a-google-user-id", "email": email, "aud": audience}
     return mocker.patch(
-        "cloudrun_iap_auth.backends.id_token.verify_token",
+        "django_cloudrun_iap.backends.id_token.verify_token",
         return_value=mock_decoded_jwt,
     )
 
@@ -73,7 +73,7 @@ def test_auth_fail_user_does_not_exist(backend, rf, mocker, settings, db):
 def test_auth_fail_jwt_validation_error(backend, rf, mocker, settings):
     """Test authentication fails if JWT validation raises an exception."""
     mocker.patch(
-        "cloudrun_iap_auth.backends.id_token.verify_token",
+        "django_cloudrun_iap.backends.id_token.verify_token",
         side_effect=Exception("Invalid token"),
     )
     request = get_request_with_headers(rf, USER_EMAIL)

@@ -1,7 +1,7 @@
 from django.test import RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
-from cloudrun_iap_auth.middlewares import IAPAuthenticationMiddleware
+from django_cloudrun_iap.middlewares import IAPAuthenticationMiddleware
 
 User = get_user_model()
 
@@ -20,7 +20,7 @@ def test_middleware_authenticates_user(mocker, settings, db):
 
     # Mock django.contrib.auth.authenticate to return our user
     mock_authenticate = mocker.patch(
-        "cloudrun_iap_auth.middlewares.auth.authenticate", return_value=user
+        "django_cloudrun_iap.middlewares.auth.authenticate", return_value=user
     )
 
     rf = RequestFactory()
@@ -37,7 +37,7 @@ def test_middleware_authenticates_user(mocker, settings, db):
 def test_middleware_iap_disabled(mocker, settings):
     """Test that the middleware does nothing if IAP_ENABLED is False."""
     settings.IAP_ENABLED = False
-    mock_authenticate = mocker.patch("cloudrun_iap_auth.middlewares.auth.authenticate")
+    mock_authenticate = mocker.patch("django_cloudrun_iap.middlewares.auth.authenticate")
 
     rf = RequestFactory()
     request = rf.get("/")
@@ -50,7 +50,7 @@ def test_middleware_iap_disabled(mocker, settings):
 
 def test_middleware_exempt_url(mocker, settings):
     """Test that the middleware bypasses auth for exempt URLs."""
-    mock_authenticate = mocker.patch("cloudrun_iap_auth.middlewares.auth.authenticate")
+    mock_authenticate = mocker.patch("django_cloudrun_iap.middlewares.auth.authenticate")
 
     rf = RequestFactory()
     request = rf.get("/exempt/")  # This URL is in IAP_EXEMPT_URLS
@@ -66,7 +66,7 @@ def test_middleware_user_already_authenticated(mocker, db):
     user_email = "test.user@emencia.com"
     user = User.objects.create_user(username=user_email, email=user_email)
 
-    mock_authenticate = mocker.patch("cloudrun_iap_auth.middlewares.auth.authenticate")
+    mock_authenticate = mocker.patch("django_cloudrun_iap.middlewares.auth.authenticate")
 
     rf = RequestFactory()
     request = rf.get("/")

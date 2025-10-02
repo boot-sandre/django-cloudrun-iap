@@ -17,7 +17,7 @@ DATABASES = {
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "cloudrun_iap_auth",
+    "django_cloudrun_iap",
 ]
 
 # Set the USER_MODEL to standard Django User
@@ -26,7 +26,7 @@ AUTH_USER_MODEL = "auth.User"
 # Add the custom authentication backend
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "cloudrun_iap_auth.backends.IAPAuthenticationBackend",
+    "django_cloudrun_iap.backends.IAPAuthenticationBackend",
 ]
 
 # Minimal IAP settings needed for the middleware to run

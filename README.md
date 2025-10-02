@@ -18,17 +18,17 @@ pip install django-cloudrun-iap
 
 ## Configuration
 
-To integrate `cloudrun_iap_auth` into your Django project, follow these steps to modify your `settings.py` file.
+To integrate `django_cloudrun_iap` into your Django project, follow these steps to modify your `settings.py` file.
 
 ### 1. Add to INSTALLED_APPS
 
-First, add `cloudrun_iap_auth` to your **`INSTALLED_APPS`** list to register the application with your project.
+First, add `django_cloudrun_iap` to your **`INSTALLED_APPS`** list to register the application with your project.
 
 ```python
 # settings.py
 INSTALLED_APPS = [
     # ... other apps
-    'cloudrun_iap_auth',
+    'django_cloudrun_iap',
 ]
 ```
 
@@ -41,7 +41,7 @@ Next, insert the IAP middleware into your MIDDLEWARE list. It is crucial to plac
 MIDDLEWARE = [
     # ... other middlewares
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'cloudrun_iap_auth.middlewares.IAPAuthenticationMiddleware',
+    'django_cloudrun_iap.middlewares.IAPAuthenticationMiddleware',
     # ... other middlewares
 ]
 ```
