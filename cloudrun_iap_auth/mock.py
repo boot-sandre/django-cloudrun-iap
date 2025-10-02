@@ -1,7 +1,6 @@
-from django.contrib.auth.models import AbstractUser
 
 
-class IAPServiceUser(AbstractUser):
+class IAPServiceUser:
     """A minimal mock user object for authenticated IAP service accounts."""
 
     is_authenticated = True
@@ -14,5 +13,3 @@ class IAPServiceUser(AbstractUser):
 
     def get_full_name(self):
         return f"Service Account: {self.email}"
-
-

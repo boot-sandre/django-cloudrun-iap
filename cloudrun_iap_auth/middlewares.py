@@ -8,7 +8,7 @@ from django.conf import settings
 from google.auth.transport import requests
 from google.oauth2 import id_token
 
-from .models import IAPServiceUser
+from .mock import IAPServiceUser
 
 logger = logging.getLogger(__name__)
 
