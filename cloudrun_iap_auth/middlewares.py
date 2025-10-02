@@ -45,7 +45,6 @@ class IAPAuthenticationMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
         # Check if IAP is enabled
-        breakpoint()
         if not getattr(settings, "IAP_ENABLED", False):
             logger.debug("IAP is desactivated. looks dj settings IAP_ENABLED")
             return
