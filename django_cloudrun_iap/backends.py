@@ -57,6 +57,9 @@ class IAPAuthenticationBackend(ModelBackend):
             logger.error(f"IAP: JWT validation failed: {e}")
             return None
 
+        # NOTA BENE: Email is provided with the jwt which ensure that the headers
+        # value not have been manipulated. In the case of mismatch it's can be an
+        # application like hijack which already define the request django user.
         header_email = iap_user_email.split(":")[-1]
         if decoded_email != header_email:
             logger.error(
@@ -64,6 +67,7 @@ class IAPAuthenticationBackend(ModelBackend):
             )
             return None
 
+        # From the prefix of the email value we will deduce username
         email = decoded_email
 
         # Check if it's a GCP service account
@@ -75,13 +79,15 @@ class IAPAuthenticationBackend(ModelBackend):
             )
             return IAPServiceUser(email=email)
 
-        # (Optional) Validate email domain
+        # Validate email domain
+        # (Optional, at None as default value the check is not applied)
         iap_email_domain = getattr(settings, "IAP_EMAIL_DOMAIN", None)
         if isinstance(iap_email_domain, list):
             iap_email_domain = tuple(iap_email_domain)
         if iap_email_domain and not email.endswith(iap_email_domain):
             logger.error(f"IAP: Email from unexpected domain: {email}")
             return None
+
         User = get_user_model()
         try:
             user = User.objects.get(email=email)
@@ -90,7 +96,7 @@ class IAPAuthenticationBackend(ModelBackend):
             logger.error(f"IAP: User with email {email} not found in DB.")
             return None
         except Exception as e:
-            logger.error(f"IAP: Error retrieving user: {e}")
+            logger.error(f"IAP: Error retrieving user: {email} exception: {e}")
             return None
 
     def get_user(self, user_id):
