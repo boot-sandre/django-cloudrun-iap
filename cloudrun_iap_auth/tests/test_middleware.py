@@ -1,51 +1,78 @@
 from django.test import RequestFactory
 from django.contrib.auth import get_user_model
-
+from django.contrib.auth.models import AnonymousUser
 from cloudrun_iap_auth.middlewares import IAPAuthenticationMiddleware
-
 
 User = get_user_model()
 
 
-def test_iap_middleware_valid_jwt_logs_in_user(mocker, settings, db):
+def get_response_mock(request):
+    """A mock get_response function."""
+    return None
+
+
+def test_middleware_authenticates_user(mocker, settings, db):
     """
-    Tests that a request with valid IAP headers authenticates and sets the
-    correct Django user on the request object.
+    Test that the middleware calls auth.authenticate and sets request.user.
     """
-    # 1. Setup: Create a mock user in the database
     user_email = "test.user@emencia.com"
-    User.objects.create_user(
-        username=user_email.split('@')[0],
-        email=user_email,
-        password='password123'
+    user = User.objects.create_user(username=user_email, email=user_email)
+
+    # Mock django.contrib.auth.authenticate to return our user
+    mock_authenticate = mocker.patch(
+        "cloudrun_iap_auth.middlewares.auth.authenticate", return_value=user
     )
 
-    # 2. Mock the external Google API call
-    # The verify_token function must return the decoded JWT payload
-    mock_decoded_jwt = {
-        "sub": "a-google-user-id",
-        "email": user_email,
-        "aud": settings.IAP_EXPECTED_AUDIENCE,
-    }
-    mocker.patch(
-        "cloudrun_iap_auth.middlewares.id_token.verify_token",
-        return_value=mock_decoded_jwt,
-    )
-
-    # 3. Prepare the request
     rf = RequestFactory()
-    # Simulate the headers IAP sends
-    iap_headers = {
-        "X-Goog-Authenticated-User-Email": f"accounts.google.com:{user_email}",
-        "X-Goog-IAP-JWT-Assertion": "fake-jwt-token",
-    }
-    request = rf.get("/", **iap_headers)
+    request = rf.get("/")
+    request.user = AnonymousUser()
 
-    # 4. Run the middleware
-    middleware = IAPAuthenticationMiddleware(get_response=lambda r: None)
-    middleware.process_request(request)
+    middleware = IAPAuthenticationMiddleware(get_response=get_response_mock)
+    middleware(request)
 
-    # 5. Assertion: Check if the user was set correctly
-    assert request.user.is_authenticated
-    assert request.user.email == user_email
-    assert request.user.pk is not None
+    mock_authenticate.assert_called_once_with(request)
+    assert request.user == user
+
+
+def test_middleware_iap_disabled(mocker, settings):
+    """Test that the middleware does nothing if IAP_ENABLED is False."""
+    settings.IAP_ENABLED = False
+    mock_authenticate = mocker.patch("cloudrun_iap_auth.middlewares.auth.authenticate")
+
+    rf = RequestFactory()
+    request = rf.get("/")
+
+    middleware = IAPAuthenticationMiddleware(get_response=get_response_mock)
+    middleware(request)
+
+    mock_authenticate.assert_not_called()
+
+
+def test_middleware_exempt_url(mocker, settings):
+    """Test that the middleware bypasses auth for exempt URLs."""
+    mock_authenticate = mocker.patch("cloudrun_iap_auth.middlewares.auth.authenticate")
+
+    rf = RequestFactory()
+    request = rf.get("/exempt/")  # This URL is in IAP_EXEMPT_URLS
+
+    middleware = IAPAuthenticationMiddleware(get_response=get_response_mock)
+    middleware(request)
+
+    mock_authenticate.assert_not_called()
+
+
+def test_middleware_user_already_authenticated(mocker, db):
+    """Test that the middleware does nothing if a user is already authenticated."""
+    user_email = "test.user@emencia.com"
+    user = User.objects.create_user(username=user_email, email=user_email)
+
+    mock_authenticate = mocker.patch("cloudrun_iap_auth.middlewares.auth.authenticate")
+
+    rf = RequestFactory()
+    request = rf.get("/")
+    request.user = user  # Set an authenticated user on the request
+
+    middleware = IAPAuthenticationMiddleware(get_response=get_response_mock)
+    middleware(request)
+
+    mock_authenticate.assert_not_called()

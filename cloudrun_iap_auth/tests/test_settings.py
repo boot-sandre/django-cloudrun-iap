@@ -23,6 +23,14 @@ INSTALLED_APPS = [
 # Set the USER_MODEL to standard Django User
 AUTH_USER_MODEL = "auth.User"
 
+# Add the custom authentication backend
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "cloudrun_iap_auth.backends.IAPAuthenticationBackend",
+]
+
 # Minimal IAP settings needed for the middleware to run
 IAP_ENABLED = True
 IAP_EXPECTED_AUDIENCE = "/projects/123/locations/test/services/test-service"
+IAP_EMAIL_DOMAIN = "emencia.com"
+IAP_EXEMPT_URLS = ["/exempt/"]
