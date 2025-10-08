@@ -15,9 +15,10 @@ DATABASES = {
 
 # Add your app and the required Django auth apps
 INSTALLED_APPS = [
+    "django.contrib.sessions",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django_cloudrun_iap",
+    "django_cloudrun_iap"
 ]
 
 # Set the USER_MODEL to standard Django User
@@ -28,6 +29,14 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "django_cloudrun_iap.backends.IAPAuthenticationBackend",
 ]
+
+MIDDLEWARE = [
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django_cloudrun_iap.middlewares.IAPAuthenticationMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_apps.goscim.middleware.TitanSCIMAuthCheckMiddleware"
+]
+
 
 # Minimal IAP settings needed for the middleware to run
 IAP_ENABLED = True
