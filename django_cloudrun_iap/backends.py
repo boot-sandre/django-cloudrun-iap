@@ -1,5 +1,4 @@
 import logging
-import time
 import re
 
 from django.conf import settings
@@ -32,11 +31,7 @@ class IAPAuthenticationBackend(ModelBackend):
         Authenticate the user using IAP headers.
         """
         # Fetch IAP headers
-        logger.debug(
-            "request.META",
-            time.ctime(),
-            extra={'json_fields': request.META}
-        )
+        logger.debug(f"request.META::keys {request.META.keys()}")
         iap_user_email = request.META.get(IAP_USER_EMAIL_HEADER)
         iap_jwt = request.META.get(IAP_JWT_ASSERTION_HEADER)
 
