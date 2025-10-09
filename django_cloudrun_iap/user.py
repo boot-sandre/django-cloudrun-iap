@@ -39,20 +39,12 @@ class IAPServiceUser:
         self.iap_external_id = email if self.is_iap_service_account else None
         self.scim_external_id = "mock-scim-id" if self.is_scim else None
 
-    def get_full_name(self):
-        if self.is_iap_service_account:
-            return f"Service Account: {self.email}"
-        return f"Mock User: {self.email}"
-
     def save(self, *args, **kwargs):
         """Mock the save method to prevent accidental database writes in tests."""
         pass
 
     def __str__(self):
         return self.email
-
-    def __init__(self, email):
-        self.email = email
 
     def get_full_name(self):
         return f"Service Account: {self.email}"
