@@ -12,6 +12,9 @@ __pycache__
 *.idea
 .*.sw?
 .vscode/
+uv.lock
+dist/
+django_cloudrun_iap.egg-info/
 
 # virtualenv
 .envs/
