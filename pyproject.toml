@@ -1,49 +1,47 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-cloudrun-iap"
-version = "0.3.1"
-authors = [
-    { name = "Simon ANDRE", email = "simon.andre@emencia.com" },
-]
+version = "0.0.1"
 description = "A Django middleware for Google Cloud RUN IAP authentication."
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT License" }
+license = "MIT"
+authors = [
+    { name = "Simon ANDRE", email = "simon.andre@emencia.com" },
+    { name = "Modu DIAO", email = "diaomodou06@gmail.com" },
+]
+
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: Django",
     "Framework :: Django :: 3.2",
     "Framework :: Django :: 4.0",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
+
 dependencies = [
     "django~=3.2",
     "google-auth>=2.0.0",
     "requests",
 ]
+
 [project.optional-dependencies]
-test = [
-    "pytest>=7.0",
-    "pytest-django>=4.5",
-    "pytest-mock>=3.0",
-]
-dev = [
-    "ipdb",
-]
+test = ["pytest>=7.0", "pytest-django>=4.5", "pytest-mock>=3.0"]
+dev = ["ipdb"]
 
 [project.urls]
-"Homepage" = "https://github.com/boot-sandre/django-cloudrun-iap"
+Homepage = "https://github.com/boot-sandre/django-cloudrun-iap"
 "Bug Tracker" = "https://github.com/boot-sandre/django-cloudrun-iap/issues"
 
+# ✅ choose the one matching your layout
+# If your package lives in the repo root:
 [tool.setuptools]
 packages = ["django_cloudrun_iap"]
-
