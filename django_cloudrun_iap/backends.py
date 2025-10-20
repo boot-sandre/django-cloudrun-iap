@@ -31,9 +31,10 @@ class IAPAuthenticationBackend(ModelBackend):
         Authenticate the user using IAP headers.
         """
         # Fetch IAP headers
-        logger.debug(f"request.META::keys {request.META.keys()}")
-        iap_user_email = request.META.get(IAP_USER_EMAIL_HEADER)
-        iap_jwt = request.META.get(IAP_JWT_ASSERTION_HEADER)
+        logger.debug(f"request.headers::keys {request.headers.keys()}")
+
+        iap_user_email = request.headers.get(IAP_USER_EMAIL_HEADER)
+        iap_jwt = request.headers.get(IAP_JWT_ASSERTION_HEADER)
 
         if not all([iap_user_email, iap_jwt]):
             logger.debug("IAP: Missing IAP headers. Cannot authenticate.")

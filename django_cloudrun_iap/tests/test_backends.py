@@ -40,8 +40,8 @@ def mock_verify_token(mocker, email, audience):
 
 def get_request_with_headers(rf, email, token=JWT_TOKEN):
     headers = {
-        "X-Goog-Authenticated-User-Email": f"accounts.google.com:{email}",
-        "X-Goog-IAP-JWT-Assertion": token,
+        "HTTP_X_GOOG_AUTHENTICATED_USER_EMAIL": f"accounts.google.com:{email}",
+        "HTTP_X_GOOG_IAP_JWT_ASSERTION": token,
     }
     return rf.get("/", **headers)
 
