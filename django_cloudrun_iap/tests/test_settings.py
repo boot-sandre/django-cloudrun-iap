@@ -32,8 +32,9 @@ AUTHENTICATION_BACKENDS = [
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django_cloudrun_iap.middlewares.IAPAuthenticationMiddleware",
+    'django.middleware.csrf.CsrfViewMiddleware',
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_cloudrun_iap.middlewares.IAPAuthenticationMiddleware",
 ]
 
 
