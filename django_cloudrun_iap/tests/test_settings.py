@@ -34,7 +34,6 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django_cloudrun_iap.middlewares.IAPAuthenticationMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django_apps.goscim.middleware.TitanSCIMAuthCheckMiddleware"
 ]
 
 
