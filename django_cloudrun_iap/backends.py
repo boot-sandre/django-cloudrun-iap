@@ -46,14 +46,28 @@ class IAPAuthenticationBackend(ModelBackend):
             logger.error("IAP: IAP_EXPECTED_AUDIENCE is not set.")
             return None
 
+        mock_verification = getattr(settings, "IAP_MOCK_VERIFICATION", False)
         # Validate the IAP JWT
         try:
-            decoded_jwt = id_token.verify_token(
-                iap_jwt,
-                requests.Request(),
-                audience=expected_audience,
-                certs_url="https://www.gstatic.com/iap/verify/public_key",
-            )
+            if mock_verification:
+                logger.warning(
+                    "IAP: !!! JWT verification is MOCKED via IAP_MOCK_VERIFICATION setting !!!"
+                )
+                # In mock mode, we skip Google's verification and trust the header.
+                # This is insecure and should only be used for testing.
+                header_email = iap_user_email.split(":")[-1]
+                if not header_email:
+                    raise Exception("Mock mode: Could not extract email from header")
+                decoded_jwt = {"email": header_email}
+            else:
+                # Original verification logic
+                decoded_jwt = id_token.verify_token(
+                    iap_jwt,
+                    requests.Request(),
+                    audience=expected_audience,
+                    certs_url="https://www.gstatic.com/iap/verify/public_key",
+                )
+
             decoded_email = decoded_jwt["email"]
         except Exception as e:
             logger.error(f"IAP: JWT validation failed: {e}")
