@@ -127,3 +127,20 @@ def test_auth_success_mock_verification(backend, rf, mocker, settings, create_us
     assert user is not None
     assert user.email == USER_EMAIL
     mock_verify.assert_not_called() 
+
+
+def test_without_auth_success_mock_verification(
+        backend, rf, mocker, settings, create_user):
+    """Test successful authentication when IAP_MOCK_VERIFICATION is True."""
+
+    # Mock verify_token just to ensure it's NOT called
+    mock_verify = mock_verify_token(
+        mocker, USER_EMAIL, settings.IAP_EXPECTED_AUDIENCE)
+    # Make it fail if it's ever called during this test
+    mock_verify.side_effect = Exception("Should not be called in mock mode")
+
+    request = get_request_with_headers(rf, USER_EMAIL)
+    user = backend.authenticate(request)
+
+    assert user is None
+    mock_verify.assert_called() 
