@@ -1,6 +1,7 @@
 import logging
 from django.contrib import auth
 from django.conf import settings
+from django_cloudrun_iap.user import IAPServiceUser
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,16 @@ class IAPAuthenticationMiddleware:
         user = auth.authenticate(request)
 
         if user:
-            request.user = user
-            logger.info(f"IAP: Authenticated user {user.email}")
+            if isinstance(user, IAPServiceUser):
+                request.user = user
+                logger.info(f"IAP: Authenticated service account {user.email}")
+            else:
+                # It's a real Django user.
+                auth.login(request, user)
+                logger.info(f"IAP: Authenticated and logged in user {user.email}")
+        else:
+            # Backend returned None (e.g., bad headers, user not in DB).
+            # request.user remains AnonymousUser.
+            logger.warning("IAP: Authentication via backend failed.")
 
         return self.get_response(request)

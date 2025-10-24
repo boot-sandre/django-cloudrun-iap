@@ -30,6 +30,7 @@ class IAPServiceUser:
 
     is_scim = True
     is_iap_service_account = True
+    is_iap = True
 
     def __init__(self, email, username=None):
         self.email = email

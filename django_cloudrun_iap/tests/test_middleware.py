@@ -1,7 +1,9 @@
 from django.test import RequestFactory
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.sessions.middleware import SessionMiddleware
 from django_cloudrun_iap.middlewares import IAPAuthenticationMiddleware
+
 
 User = get_user_model()
 
@@ -17,8 +19,9 @@ def test_middleware_authenticates_user(mocker, settings, db):
     """
     user_email = "test.user@emencia.com"
     user = User.objects.create_user(username=user_email, email=user_email)
+    
+    user.backend = 'django_cloudrun_iap.backends.IAPAuthenticationBackend'
 
-    # Mock django.contrib.auth.authenticate to return our user
     mock_authenticate = mocker.patch(
         "django_cloudrun_iap.middlewares.auth.authenticate", return_value=user
     )
@@ -26,6 +29,11 @@ def test_middleware_authenticates_user(mocker, settings, db):
     rf = RequestFactory()
     request = rf.get("/")
     request.user = AnonymousUser()
+
+    session_mw = SessionMiddleware(get_response_mock)
+    session_mw(request)
+    # The session must be saved for auth.login to use it
+    request.session.save()
 
     middleware = IAPAuthenticationMiddleware(get_response=get_response_mock)
     middleware(request)
